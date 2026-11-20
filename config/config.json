@@ -1,0 +1,5 @@
+{
+    "application": "delivery-metrics-exporter",
+    "port": 8000,
+    "metrics_endpoint": "/metrics"
+}
