@@ -13,7 +13,7 @@ class TestMetricsExporter(unittest.TestCase):
         result = get_metrics()
 
         self.assertIn(
-            "delivery_requests_total",
+            "wrong_metric_name",
             result
         )
 
