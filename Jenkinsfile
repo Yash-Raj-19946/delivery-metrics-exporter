@@ -1,41 +1,70 @@
 
-from prometheus_client import (
-    Counter,
-    Gauge,
-    generate_latest,
-    start_http_server
-)
+pipeline {
+    agent any
 
-import time
+    stages {
 
-# Total number of delivery requests
-delivery_requests = Counter(
-    'delivery_requests_total',
-    'Total number of delivery requests'
-)
+        stage('Source Checkout') {
+            steps {
+                echo 'Checking out source code from GitHub'
+                checkout scm
+                bat 'dir'
+            }
+        }
 
-# Number of pending deliveries
-pending_deliveries = Gauge(
-    'pending_deliveries',
-    'Number of pending deliveries'
-)
+        stage('Dependency Installation') {
+            steps {
+                echo 'Checking Python installation'
+                bat 'py -3 --version'
 
+                echo 'Creating virtual environment'
+                bat 'py -3 -m venv .venv'
 
-def update_metrics():
-    delivery_requests.inc()
-    pending_deliveries.set(5)
+                echo 'Installing dependencies'
+                bat '.venv\\Scripts\\python.exe -m pip install --upgrade pip'
+                bat '.venv\\Scripts\\python.exe -m pip install -r requirements.txt'
+            }
+        }
 
+        stage('Automated Testing') {
+            steps {
+                echo 'Running automated tests'
+                bat '.venv\\Scripts\\python.exe -m unittest test_metrics -v'
+            }
+        }
 
-def get_metrics():
-    return generate_latest().decode('utf-8')
+        stage('Deployment Packaging') {
+            steps {
+                echo 'Creating deployment package'
 
+                bat '''
+                if exist deployment rmdir /S /Q deployment
+                mkdir deployment
 
-if __name__ == "__main__":
+                copy /Y metrics_exporter.py deployment\\
+                copy /Y requirements.txt deployment\\
+                copy /Y README.md deployment\\
 
-    start_http_server(8000)
+                xcopy config deployment\\config\\ /E /I /Y
+                '''
 
-    print("Delivery Metrics Exporter running on port 8000")
+                archiveArtifacts artifacts: 'deployment/**',
+                                 fingerprint: true
+            }
+        }
+    }
 
-    while True:
-        update_metrics()
-        time.sleep(5)
+    post {
+        success {
+            echo 'PIPELINE COMPLETED SUCCESSFULLY'
+        }
+
+        failure {
+            echo 'PIPELINE FAILED - CHECK CONSOLE OUTPUT'
+        }
+
+        always {
+            echo 'Jenkins execution finished'
+        }
+    }
+}
