@@ -3,7 +3,6 @@ pipeline {
     agent any
 
     stages {
-
         stage('Source Checkout') {
             steps {
                 echo 'Checking out source code from GitHub'
@@ -15,13 +14,12 @@ pipeline {
         stage('Dependency Installation') {
             steps {
                 echo 'Checking Python installation'
-                bat 'py -3 --version'
+                bat '"C:\\Users\\yashr\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" --version'
 
                 echo 'Creating virtual environment'
-                bat 'py -3 -m venv .venv'
+                bat '"C:\\Users\\yashr\\AppData\\Local\\Programs\\Python\\Python311\\python.exe" -m venv .venv'
 
                 echo 'Installing dependencies'
-                bat '.venv\\Scripts\\python.exe -m pip install --upgrade pip'
                 bat '.venv\\Scripts\\python.exe -m pip install -r requirements.txt'
             }
         }
@@ -36,16 +34,13 @@ pipeline {
         stage('Deployment Packaging') {
             steps {
                 echo 'Creating deployment package'
-
                 bat '''
-                if exist deployment rmdir /S /Q deployment
-                mkdir deployment
-
-                copy /Y metrics_exporter.py deployment\\
-                copy /Y requirements.txt deployment\\
-                copy /Y README.md deployment\\
-
-                xcopy config deployment\\config\\ /E /I /Y
+                    if exist deployment rmdir /S /Q deployment
+                    mkdir deployment
+                    copy /Y metrics_exporter.py deployment\\
+                    copy /Y requirements.txt deployment\\
+                    copy /Y README.md deployment\\
+                    xcopy config deployment\\config\\ /E /I /Y
                 '''
 
                 archiveArtifacts artifacts: 'deployment/**',
